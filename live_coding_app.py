@@ -3,15 +3,21 @@ import os
 from dotenv import load_dotenv
 import google.generativeai as genai
 
+# Load environment variables
+load_dotenv()
+
+# Konfigurasi halaman Streamlit
+st.set_page_config(
+    page_title="AI Content Generator",
+    page_icon="🚀",
+    layout="wide"
+)
+
+# Fungsi untuk inisialisasi Google AI
 @st.cache_resource
 def init_google_ai():
-    """
-    Inisialisasi Google AI dengan cache
-    """
+    """Inisialisasi Google AI dengan cache"""
     try:
-        # Load environment variables
-        load_dotenv()
-        
         api_key = os.getenv("GOOGLE_API_KEY")
         if not api_key:
             st.error("⚠️ Google API Key tidak ditemukan! Silakan tambahkan ke file .env")
@@ -27,12 +33,11 @@ def init_google_ai():
         st.error(f"❌ Error saat menginisialisasi Google AI: {str(e)}")
         st.stop()
 
+# Fungsi untuk generate konten
 def generate_content(topic, model):
-    """
-    Generate konten menggunakan Google Gemini AI
-    """
+    """Generate konten berdasarkan topik yang diberikan"""
     try:
-        # Prompt template untuk AI
+        # Prompt template yang lebih spesifik
         prompt = f"""
         Buatkan konten yang menarik dan informatif tentang topik: "{topic}"
         
@@ -52,17 +57,81 @@ def generate_content(topic, model):
         Gunakan bahasa Indonesia yang baik dan benar.
         """
         
-        # Generate menggunakan Google AI
+        # Generate menggunakan Google AI langsung
         response = model.generate_content(prompt)
         return response.text
     
     except Exception as e:
         return f"❌ Terjadi error saat generate konten: {str(e)}"
 
+# Main App
+def main():
+    # 1. st.title() - Judul aplikasi
+    st.title("Aplikasi AI Content Generator 🚀")
+    
+    # Tambahkan deskripsi singkat
+    st.markdown("""
+    **Selamat datang di AI Content Generator!** 
+    
+    Aplikasi ini menggunakan Google Gemini AI untuk membantu Anda membuat konten berkualitas tinggi 
+    berdasarkan topik yang Anda berikan. Cukup masukkan topik, klik tombol generate, dan voila! ✨
+    """)
+    
+    # Divider untuk estetika
+    st.divider()
+    
+    # Inisialisasi Google AI
+    model = init_google_ai()
+    
+    # 2. st.text_input() - Input topik dari user
+    user_topic = st.text_input(
+        "📝 Masukkan topik konten:",
+        placeholder="Contoh: Tips Belajar Python, Manfaat AI dalam Bisnis, dll.",
+        help="Masukkan topik apapun yang ingin Anda buatkan kontennya"
+    )
+    
+    # Tampilkan preview topik jika ada input
+    if user_topic:
+        st.write(f"**Topik yang akan diproses:** {user_topic}")
+    
+    # 3. st.button() - Tombol untuk generate konten
+    if st.button("🔥 Generate Konten", type="primary", use_container_width=True):
+        # Validasi input
+        if not user_topic.strip():
+            st.warning("⚠️ Mohon masukkan topik terlebih dahulu!")
+        else:
+            # Loading indicator
+            with st.spinner("🤖 AI sedang bekerja keras membuat konten untuk Anda..."):
+                # Generate konten menggunakan AI
+                hasil_konten = generate_content(user_topic, model)
+            
+            # 4. st.info() - Tampilkan hasil konten
+            st.success("✅ Konten berhasil dibuat!")
+            
+            # Tampilkan hasil dalam container yang rapi
+            st.subheader("📄 Hasil Konten:")
+            st.info(hasil_konten)
+            
+            # Tambahan: Tombol copy konten
+            st.download_button(
+                label="📥 Download Konten",
+                data=hasil_konten,
+                file_name=f"konten_{user_topic.replace(' ', '_').lower()}.txt",
+                mime="text/plain",
+                help="Download konten sebagai file teks"
+            )
+    
+    # Footer
+    st.divider()
+    st.markdown("""
+    <div style='text-align: center; color: gray; font-size: 14px;'>
+        💡 <strong>Tips:</strong> Semakin spesifik topik Anda, semakin baik hasil kontennya!<br>
+        Dibuat dengan ❤️ menggunakan Streamlit & Google Gemini AI
+    </div>
+    """, unsafe_allow_html=True)
+
+# Sidebar untuk informasi tambahan
 def sidebar_info():
-    """
-    Sidebar dengan informasi tambahan
-    """
     st.sidebar.header("ℹ️ Informasi")
     st.sidebar.markdown("""
     **Cara Penggunaan:**
@@ -90,80 +159,14 @@ def sidebar_info():
 
 def run():
     """
-    Stage 5: Add Styling and UI Improvements
-    Menambahkan perbaikan UI, styling, dan user experience
+    Stage 6: Final Version (Complete App)
+    Versi lengkap dan final yang sama dengan app.py
     """
-    
-    # Konfigurasi halaman
-    st.set_page_config(
-        page_title="AI Content Generator",
-        page_icon="🚀",
-        layout="wide"
-    )
-    
-    # Sidebar info
+    # Tampilkan sidebar info
     sidebar_info()
     
-    # Judul aplikasi
-    st.title("Aplikasi AI Content Generator 🚀")
-    
-    # Deskripsi dengan markdown
-    st.markdown("""
-    **Selamat datang di AI Content Generator!** 
-    
-    Aplikasi ini menggunakan Google Gemini AI untuk membantu Anda membuat konten berkualitas tinggi 
-    berdasarkan topik yang Anda berikan. Cukup masukkan topik, klik tombol generate, dan voila! ✨
-    """)
-    
-    # Divider untuk estetika
-    st.divider()
-    
-    # Inisialisasi Google AI
-    model = init_google_ai()
-    
-    # Input teks dari user dengan help text
-    user_topic = st.text_input(
-        "📝 Masukkan topik konten:",
-        placeholder="Contoh: Tips Belajar Python, Manfaat AI dalam Bisnis, dll.",
-        help="Masukkan topik apapun yang ingin Anda buatkan kontennya"
-    )
-    
-    # Tampilkan preview topik jika ada input
-    if user_topic:
-        st.write(f"**Topik yang akan diproses:** {user_topic}")
-    
-    # Tombol untuk generate konten dengan styling
-    if st.button("🔥 Generate Konten", type="primary", use_container_width=True):
-        if not user_topic.strip():
-            st.warning("⚠️ Mohon masukkan topik terlebih dahulu!")
-        else:
-            # Loading indicator
-            with st.spinner("🤖 AI sedang bekerja keras membuat konten untuk Anda..."):
-                hasil_konten = generate_content(user_topic, model)
-            
-            st.success("✅ Konten berhasil dibuat!")
-            
-            # Tampilkan hasil dalam container yang rapi
-            st.subheader("📄 Hasil Konten:")
-            st.info(hasil_konten)
-            
-            # Tombol download konten
-            st.download_button(
-                label="📥 Download Konten",
-                data=hasil_konten,
-                file_name=f"konten_{user_topic.replace(' ', '_').lower()}.txt",
-                mime="text/plain",
-                help="Download konten sebagai file teks"
-            )
-    
-    # Footer dengan styling HTML
-    st.divider()
-    st.markdown("""
-    <div style='text-align: center; color: gray; font-size: 14px;'>
-        💡 <strong>Tips:</strong> Semakin spesifik topik Anda, semakin baik hasil kontennya!<br>
-        Dibuat dengan ❤️ menggunakan Streamlit & Google Gemini AI
-    </div>
-    """, unsafe_allow_html=True)
+    # Jalankan aplikasi utama
+    main()
 
 if __name__ == "__main__":
     run()
