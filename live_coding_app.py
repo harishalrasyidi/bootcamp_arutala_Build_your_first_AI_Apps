@@ -1,51 +1,68 @@
 import streamlit as st
 import os
 from dotenv import load_dotenv
+import google.generativeai as genai
 
-def check_environment():
+@st.cache_resource
+def init_google_ai():
     """
-    Fungsi untuk mengecek dan setup environment variables
+    Inisialisasi Google AI dengan cache
     """
-    # Load environment variables
-    load_dotenv()
-    
-    # Check Google API Key
-    api_key = os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        st.error("⚠️ Google API Key tidak ditemukan! Silakan tambahkan ke file .env")
-        st.info("💡 Buat file .env dan tambahkan: GOOGLE_API_KEY=your_api_key_here")
-        return False
-    else:
-        st.success("✅ Google API Key berhasil dimuat!")
-        return True
+    try:
+        # Load environment variables
+        load_dotenv()
+        
+        api_key = os.getenv("GOOGLE_API_KEY")
+        if not api_key:
+            st.error("⚠️ Google API Key tidak ditemukan! Silakan tambahkan ke file .env")
+            st.stop()
+        
+        # Configure Google AI
+        genai.configure(api_key=api_key)
+        
+        # Initialize model
+        model = genai.GenerativeModel('gemini-2.5-flash')
+        return model
+    except Exception as e:
+        st.error(f"❌ Error saat menginisialisasi Google AI: {str(e)}")
+        st.stop()
 
-def generate_simple_content(topic):
+def generate_content(topic, model):
     """
-    Fungsi sederhana untuk generate konten tanpa AI
-    (simulasi sebelum integrasi AI sesungguhnya)
+    Generate konten menggunakan Google Gemini AI
     """
-    return f"""
-    **Judul:** {topic}
+    try:
+        # Prompt template untuk AI
+        prompt = f"""
+        Buatkan konten yang menarik dan informatif tentang topik: "{topic}"
+        
+        Format konten:
+        1. Judul yang catchy
+        2. Pendahuluan singkat
+        3. 3-5 poin utama dengan penjelasan
+        4. Kesimpulan
+        5. Call to action
+        
+        Konten harus:
+        - Mudah dipahami
+        - Informatif dan berguna
+        - Engaging untuk pembaca
+        - Panjang sekitar 200-300 kata
+        
+        Gunakan bahasa Indonesia yang baik dan benar.
+        """
+        
+        # Generate menggunakan Google AI
+        response = model.generate_content(prompt)
+        return response.text
     
-    **Pendahuluan:**
-    {topic} adalah topik yang menarik untuk dibahas. Mari kita eksplorasi lebih dalam.
-    
-    **Poin Utama:**
-    1. Pentingnya memahami {topic}
-    2. Manfaat dari {topic} dalam kehidupan sehari-hari
-    3. Tips praktis terkait {topic}
-    
-    **Kesimpulan:**
-    {topic} memiliki dampak positif yang signifikan jika diterapkan dengan baik.
-    
-    **Call to Action:**
-    Mulai terapkan pengetahuan tentang {topic} dalam aktivitas Anda!
-    """
+    except Exception as e:
+        return f"❌ Terjadi error saat generate konten: {str(e)}"
 
 def run():
     """
-    Stage 3: Add Environment Setup
-    Menambahkan konfigurasi environment dan setup API key
+    Stage 4: Add AI Integration
+    Menambahkan integrasi penuh dengan Google Gemini AI
     """
     
     # Konfigurasi halaman
@@ -61,34 +78,32 @@ def run():
     st.write("Selamat datang di aplikasi AI Content Generator!")
     st.write("Aplikasi ini menggunakan Google Gemini AI untuk membuat konten berkualitas.")
     
-    # Check environment setup
-    env_ready = check_environment()
+    # Inisialisasi Google AI
+    model = init_google_ai()
     
     st.divider()
     
     # Input teks dari user
     user_topic = st.text_input(
-        "Masukkan topik konten:",
+        "📝 Masukkan topik konten:",
         placeholder="Contoh: Tips Belajar Python, Manfaat AI dalam Bisnis, dll."
     )
     
     # Tampilkan topik yang dimasukkan user
     if user_topic:
-        st.write(f"**Topik yang Anda masukkan:** {user_topic}")
+        st.write(f"**Topik yang akan diproses:** {user_topic}")
     
     # Tombol untuk generate konten
-    if st.button("Generate Konten"):
-        if not env_ready:
-            st.error("❌ Environment belum siap! Pastikan API key sudah dikonfigurasi.")
-        elif not user_topic.strip():
+    if st.button("🔥 Generate Konten", type="primary"):
+        if not user_topic.strip():
             st.warning("⚠️ Mohon masukkan topik terlebih dahulu!")
         else:
-            # Generate konten sederhana (belum menggunakan AI)
-            with st.spinner("🤖 Sedang memproses..."):
-                hasil_konten = generate_simple_content(user_topic)
+            # Generate konten menggunakan AI
+            with st.spinner("🤖 AI sedang bekerja keras membuat konten untuk Anda..."):
+                hasil_konten = generate_content(user_topic, model)
             
             st.success("✅ Konten berhasil dibuat!")
-            st.subheader("Hasil Konten:")
+            st.subheader("📄 Hasil Konten:")
             st.info(hasil_konten)
 
 if __name__ == "__main__":
